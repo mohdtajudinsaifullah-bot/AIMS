@@ -207,34 +207,38 @@ with tab_kes:
                         dokumen_relevan = db.similarity_search(f_fakta, k=15)
                         konteks = "\n".join([d.page_content for d in dokumen_relevan])
 
-                        prompt_ap = f"""Anda adalah seorang Hakim Mahkamah Syariah yang pakar. Tugas anda merangka ALASAN PENGHAKIMAN (AP) yang terperinci dan panjang.
+                        prompt_ap = f"""Anda adalah YAA Ketua Hakim Mahkamah Syariah yang sangat berpengalaman dan pakar dalam penulisan Alasan Penghakiman (AP). 
+Tugas anda adalah merangka Draf AP yang SANGAT PANJANG, TERPERINCI, MENDALAM dan KOMPREHENSIF (setaraf dengan dokumen kehakiman sebenar yang melebihi 6 hingga 10 muka surat). 
+DILARANG SAMA SEKALI MEMBUAT RINGKASAN! Anda wajib menghuraikan setiap poin dengan panjang lebar.
 
 AMARAN KERAS FORMAT:
-1. JANGAN tulis Kepala Surat sama sekali. Mula draf terus dengan tajuk: PERMOHONAN
+1. JANGAN tulis Kepala Surat (nama mahkamah, pihak-pihak, nombor kes). Mula draf terus dengan tajuk: PERMOHONAN.
 2. DILARANG menggunakan simbol Markdown (*, >, #, ##).
-3. DILARANG menggunakan kurungan bernombor seperti [1], [2] pada mula perenggan.
+3. DILARANG menggunakan kurungan bernombor seperti [1], [2] pada permulaan perenggan.
 
-PENTING UNTUK ULASAN MAHKAMAH: 
-Anda DIWAJIBKAN memasukkan elemen ini dari Konteks:
-- Peruntukan Undang-Undang: Petik nama akta/enakmen dan seksyen yang tepat bagi {m_negeri}.
-- Autoriti Kes Lepas: Anda WAJIB memetik SEKURANG-KURANGNYA 3 HINGGA 4 KES LEPAS YANG BERBEZA daripada rujukan konteks di bawah untuk menyokong hujah. Terangkan kaitan setiap kes tersebut.
-- Nas Syarak: Masukkan petikan hukum syarak berkaitan.
+PANDUAN PENULISAN ULASAN MAHKAMAH (BAHAGIAN INI WAJIB SANGAT PANJANG):
+Anda DIWAJIBKAN merujuk kepada 'RUJUKAN KES LEPAS' di bawah. Bahagikan Ulasan Mahkamah anda kepada 4 fasa perbincangan utama:
+FASA 1: PERUNTUKAN UNDANG-UNDANG. Senaraikan teks penuh seksyen akta/enakmen bagi {m_negeri} yang relevan. Huraikan maksud seksyen tersebut dan intipatinya baris demi baris.
+FASA 2: NAS SYARAK & KITAB MUKTABAR. Masukkan petikan Al-Quran, Hadis, Arahan Amalan, atau petikan dari kitab-kitab muktabar (jika ada di dalam rujukan). Kupas pandangan fuqaha secara mendalam.
+FASA 3: AUTORITI KES LEPAS. Anda WAJIB memetik SEKURANG-KURANGNYA 3 HINGGA 4 KES LEPAS YANG BERBEZA dari konteks di bawah. JANGAN sekadar sebut nama kes. Anda mesti menghuraikan fakta kes tersebut, rasionandi (alasan keputusan hakim terdahulu), dan prinsip undang-undang yang diputuskan dalam kes tersebut dengan panjang lebar.
+FASA 4: APLIKASI & HUJAH KES SEMASA. Kaitkan segala undang-undang dan kes lepas tadi dengan fakta kes pemohon ini. Hujahkan mengapa permohonan ini patut diterima atau ditolak berdasarkan nas tersebut.
 
-STRUKTUR KANDUNGAN:
+STRUKTUR KANDUNGAN WAJIB:
+
 PERMOHONAN
-({f_permohonan})
+(Kembangkan permohonan ini menggunakan laras bahasa guaman yang penuh formaliti. Input asas: {f_permohonan})
 
 FAKTA KES
-({f_fakta})
+(Huraikan fakta kes pemohon secara terperinci, kronologi dan jelas. Input asas: {f_fakta})
 
 ULASAN MAHKAMAH
-(Ini adalah teras penghakiman. Huraikan kaitan fakta kes dengan undang-undang, 3 HINGGA 4 kes autoriti, dan hukum syarak. Ringkasan asas: {f_ulasan})
+(Ini adalah TERAS AP. Tuliskan perbincangan kehakiman yang panjang lebar, ilmiah, dan berhujah. Anda mesti menulis SEKURANG-KURANGNYA 15 HINGGA 20 PERENGGAN dalam bahagian ini. Terapkan Fasa 1, 2, 3, dan 4 di atas. Kupas rujukan kes lepas dan kitab secara menyeluruh. Input asas: {f_ulasan})
 
 KEPUTUSAN
 (Mesti dimulakan dengan: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
-(Guna laras bahasa hierarki {m_level}. Ringkasan: {f_keputusan})
+(Gunakan laras bahasa kehakiman untuk peringkat {m_level}. Nyatakan perintah mahkamah secara terperinci satu per satu. Input asas: {f_keputusan})
 
-RUJUKAN KES LEPAS (KONTEKS DARI PINECONE):
+RUJUKAN KES LEPAS (KONTEKS DARI PINECONE - SALIN, PETIK, DAN HURAIKAN DARI SINI):
 ---------------------
 {konteks}
 ---------------------
