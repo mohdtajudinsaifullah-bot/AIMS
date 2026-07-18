@@ -7,3 +7,4 @@ langchain-pinecone
 python-docx
 langchain-community
 duckduckgo-search
+ddgs
