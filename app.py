@@ -207,7 +207,8 @@ with tab_kes:
                         dokumen_relevan = db.similarity_search(f_fakta, k=5)
                         konteks = "\n".join([d.page_content for d in dokumen_relevan])
 
-                        prompt_ap = f"""Anda adalah Penyelidik Undang-Undang Kanan. Tugas anda merangka kandungan ALASAN PENGHAKIMAN (AP).
+                        # --- PROMPT BARU YANG LEBIH TEGAS & TERPERINCI ---
+                        prompt_ap = f"""Anda adalah seorang Hakim Mahkamah Syariah yang sangat pakar dan berpengalaman luas di Malaysia. Tugas anda adalah merangka kandungan ALASAN PENGHAKIMAN (AP) yang terperinci, panjang, dan sarat dengan hujah perundangan.
 
 AMARAN KERAS FORMAT (WAJIB PATUH 100%):
 1. JANGAN tulis Kepala Surat sama sekali.
@@ -217,22 +218,29 @@ AMARAN KERAS FORMAT (WAJIB PATUH 100%):
 5. DILARANG menggunakan HURUF BESAR (ALL CAPS) untuk perenggan huraian. 
 6. JANGAN SESEKALI menyalin maklumat pihak, nama hakim, tarikh, atau no kes daripada Kes Rujukan.
 
+PENTING: Anda DIWAJIBKAN merujuk kepada RUJUKAN KES LEPAS di bawah untuk mengukuhkan ulasan anda. Di bahagian ULASAN MAHKAMAH, anda WAJIB memasukkan elemen ini dari Konteks:
+- Peruntukan Undang-Undang: Petik nama akta/enakmen dan nombor seksyen yang tepat bagi negeri {m_negeri}.
+- Autoriti Kes Lepas: Rujuk kes-kes terdahulu yang relevan sebagai sokongan teguh.
+- Nas Syarak & Kitab Fiqh: Masukkan pandangan hukum syarak atau petikan yang berkaitan dengan isu kes.
+
 STRUKTUR KANDUNGAN:
 PERMOHONAN
 (Tulis draf permohonan. Ringkasan: {f_permohonan})
 
 FAKTA KES
-(Huraikan fakta. Input: {f_fakta})
+(Huraikan fakta secara jelas. Input: {f_fakta})
 
 ULASAN MAHKAMAH
-(Salin PERUNTUKAN UNDANG-UNDANG verbatim dari rujukan kes bagi negeri {m_negeri}. Ulas menggunakan ayat biasa. Ringkasan: {f_ulasan})
+(Ini adalah teras penghakiman dan mestilah paling panjang. Huraikan kaitan fakta kes dengan undang-undang, kes autoriti, dan hukum syarak. Ulas menggunakan bahasa kehakiman yang rasmi. Ringkasan asas: {f_ulasan})
 
 KEPUTUSAN
 (Mesti dimulakan dengan ayat: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
 (Guna laras bahasa hierarki {m_level}. Ringkasan: {f_keputusan})
 
-RUJUKAN KES LEPAS:
+RUJUKAN KES LEPAS (KONTEKS DARI PINECONE):
+---------------------
 {konteks}
+---------------------
 """
                         respons = cuba_jana_ai(prompt_ap)
                         
