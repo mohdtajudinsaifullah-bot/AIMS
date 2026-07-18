@@ -1,6 +1,5 @@
 streamlit
 openai
-pinecone-client==3.2.2
 python-dotenv
 langchain
 langchain-openai
