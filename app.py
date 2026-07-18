@@ -36,7 +36,7 @@ def cuba_jana_ai(prompt_teks):
             try:
                 llm = ChatOpenAI(model=model_ai, temperature=0.3)
                 respons = llm.invoke(prompt_teks)
-                return ResponsAI(respons.content) 
+                return ResponsAI(respons.content) # Bungkus supaya serasi dengan '.text'
             except Exception as e:
                 ralat = str(e)
                 if "429" in ralat or "RateLimit" in ralat:
@@ -168,7 +168,6 @@ st.set_page_config(page_title="Pintar Syariah AI", page_icon="⚖️", layout="w
 st.title("⚖️ Artificial Intelligence Mahkamah Syariah (AIMS)")
 st.divider()
 
-# KITA TAMBAH TAB KETIGA UNTUK CARIAN ONLINE
 tab_kes, tab_pengurusan, tab_carian = st.tabs(["🏛️ Mod 1: Analisis Kes Syariah (AP)", "📝 Mod 2: Kertas Kerja", "🌐 Mod 3: Carian Pintar Online"])
 
 # ==========================================
@@ -200,12 +199,11 @@ with tab_kes:
             if f_fakta.strip() == "":
                 st.warning("⚠️ Sila masukkan Fakta Kes!")
             else:
-                with st.spinner("AI sedang menganalisa maklumat yang diberikan dan sedang menyediakan cadangan AP ..."):
+                with st.spinner("AI sedang merangka AP dan mencari vektor dari Pinecone..."):
                     try:
                         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                         db = PineconeVectorStore(index_name="projek-aims", embedding=embeddings)
                         
-                        # KITA NAIKKAN k=15 SUPAYA LEBIH BANYAK KES DIKAUT
                         dokumen_relevan = db.similarity_search(f_fakta, k=15)
                         konteks = "\n".join([d.page_content for d in dokumen_relevan])
 
@@ -312,16 +310,22 @@ with tab_pengurusan:
                     st.download_button(f"📄 Muat Turun {jenis_kertas} (Word)", data=fail_pengurusan_docx, file_name=f"{jenis_kertas.replace(' ', '_')}.docx")
                 except Exception as e: st.error(f"❌ Ralat Sistem: {e}")
 
-
 # ==========================================
-# MOD 3: CARIAN PINTAR ONLINE (Copiable Text)
+# MOD 3: CARIAN PINTAR ONLINE (DENGAN BUTANG CARIAN LANJUT)
 # ==========================================
 with tab_carian:
     st.subheader("🌐 Carian Maklumat Pintar (Online)")
     st.write("Sistem ini akan mencari maklumat perundangan atau maklumat umum terkini di internet (melalui DuckDuckGo) dan AI akan merumuskannya untuk anda.")
     
+    # 1. SETUP SESSION STATE
+    if "hasil_asas" not in st.session_state:
+        st.session_state.hasil_asas = ""
+    if "carian_query" not in st.session_state:
+        st.session_state.carian_query = ""
+
     topik_carian = st.text_input("🔍 Masukkan isu atau topik yang ingin dicari (Cth: Apa itu permohonan cerai fasakh mengikut undang-undang keluarga Islam?):")
     
+    # 2. BUTANG PERTAMA (Carian Asas)
     if st.button("Jalankan Carian", type="primary"):
         if topik_carian.strip() == "":
             st.warning("⚠️ Sila masukkan topik carian terlebih dahulu.")
@@ -332,20 +336,57 @@ with tab_carian:
                     hasil_mentah = carian_enjin.invoke(topik_carian)
                     
                     prompt_carian = f"""Anda adalah Pembantu Penyelidik Syariah. 
-Berikut adalah maklumat mentah yang diperolehi dari internet mengenai topik: '{topik_carian}'.
-Tugas anda adalah menyusun semula maklumat ini menjadi satu penerangan yang sangat kemas, profesional, dan mudah difahami.
-
-Maklumat Mentah:
-{hasil_mentah}
-"""
+                    Berikut adalah maklumat mentah yang diperolehi dari internet mengenai topik: '{topik_carian}'.
+                    Tugas anda adalah menyusun semula maklumat ini menjadi satu penerangan yang sangat kemas, profesional, dan mudah difahami.
+                    
+                    Maklumat Mentah:
+                    {hasil_mentah}
+                    """
                     respons_carian = cuba_jana_ai(prompt_carian)
                     
-                    st.success("✅ Carian Berjaya! Anda boleh *Copy* teks di bawah:")
-                    # KITA GUNA TEXT AREA SUPAYA USER BOLEH COPY DENGAN MUDAH
-                    st.text_area("Hasil Carian", value=respons_carian.text, height=400)
+                    # Simpan dalam session state supaya tak hilang
+                    st.session_state.hasil_asas = respons_carian.text
+                    st.session_state.carian_query = topik_carian
                     
                 except Exception as e:
                     st.error(f"❌ Gagal melakukan carian: {e}")
+
+    # 3. PAPARAN HASIL PERTAMA & BUTANG KEDUA
+    if st.session_state.hasil_asas:
+        st.success("✅ Carian Berjaya! Anda boleh rujuk ringkasan asas di bawah:")
+        st.text_area("Hasil Carian", value=st.session_state.hasil_asas, height=350)
+        
+        st.divider()
+        
+        # Butang Carian Lanjut
+        if st.button("🔍 Carian Lanjut (Akta, Kes & Link)"):
+            with st.spinner("Sedang menggali peruntukan undang-undang dan kes rujukan beserta pautan..."):
+                try:
+                    carian_enjin = DuckDuckGoSearchRun()
+                    query_lanjut = f"{st.session_state.carian_query} akta enakmen kes mahkamah syariah e-syariah malaysia pautan link"
+                    hasil_mentah_lanjut = carian_enjin.invoke(query_lanjut)
+                    
+                    prompt_lanjut = f"""
+                    Anda adalah Penyelidik Undang-Undang Syariah Kanan. Berdasarkan isu: '{st.session_state.carian_query}' 
+                    dan hasil carian web ini: '{hasil_mentah_lanjut}'.
+                    
+                    Sila sediakan maklumat terperinci berikut:
+                    1. **Peruntukan Undang-Undang**: Senaraikan Akta/Enakmen Syariah yang berkaitan di Malaysia.
+                    2. **Kes Rujukan**: Senarai kes-kes Mahkamah Syariah yang telah diputuskan berhubung isu ini.
+                    3. **Pautan (URL)**: Anda WAJIB menyertakan pautan (URL link) internet yang sah yang dijumpai dalam carian web tersebut supaya pengguna boleh klik untuk bacaan lanjut.
+                    
+                    Susun jawapan dengan kemas menggunakan format Markdown (Contoh format: `[Nama Kes/Akta](URL)`). 
+                    Jika tiada pautan khusus dijumpai dalam hasil carian, berikan cadangan portal rasmi (seperti portal e-Syariah atau Jurnal Hukum).
+                    """
+                    
+                    respons_lanjut = cuba_jana_ai(prompt_lanjut)
+                    
+                    st.markdown("### 📚 Hasil Carian Lanjut (Perundangan, Kes & Pautan)")
+                    st.info("Nota: Pautan (URL) yang dijana bergantung kepada ketersediaan rekod di enjin carian awam internet.")
+                    st.markdown(respons_lanjut.text)
+                    
+                except Exception as e:
+                    st.error(f"❌ Gagal melakukan carian lanjut: {e}")
 
 # ==========================================
 # FOOTER HAK CIPTA (HAK MILIK EKSKLUSIF)
