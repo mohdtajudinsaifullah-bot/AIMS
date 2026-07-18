@@ -199,7 +199,7 @@ with tab_kes:
             if f_fakta.strip() == "":
                 st.warning("⚠️ Sila masukkan Fakta Kes!")
             else:
-                with st.spinner("AI sedang merangka AP dan mencari vektor dari Pinecone..."):
+                with st.spinner("AI sedang menganalisa maklumat yang diberikan dan menyediakan cadangan AP..."):
                     try:
                         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                         db = PineconeVectorStore(index_name="projek-aims", embedding=embeddings)
