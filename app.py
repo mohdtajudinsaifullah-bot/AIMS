@@ -5,6 +5,7 @@ import re
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
+from langchain_community.tools import DuckDuckGoSearchRun
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
@@ -35,7 +36,7 @@ def cuba_jana_ai(prompt_teks):
             try:
                 llm = ChatOpenAI(model=model_ai, temperature=0.3)
                 respons = llm.invoke(prompt_teks)
-                return ResponsAI(respons.content) # Bungkus supaya serasi dengan '.text'
+                return ResponsAI(respons.content) 
             except Exception as e:
                 ralat = str(e)
                 if "429" in ralat or "RateLimit" in ralat:
@@ -167,7 +168,8 @@ st.set_page_config(page_title="Pintar Syariah AI", page_icon="⚖️", layout="w
 st.title("⚖️ Artificial Intelligence Mahkamah Syariah (AIMS)")
 st.divider()
 
-tab_kes, tab_pengurusan = st.tabs(["🏛️ Mod 1: Analisis Kes Syariah (AP)", "📝 Mod 2: Kertas Kerja & Arahan Amalan"])
+# KITA TAMBAH TAB KETIGA UNTUK CARIAN ONLINE
+tab_kes, tab_pengurusan, tab_carian = st.tabs(["🏛️ Mod 1: Analisis Kes Syariah (AP)", "📝 Mod 2: Kertas Kerja", "🌐 Mod 3: Carian Pintar Online"])
 
 # ==========================================
 # MOD 1: ANALISIS KES (DRAF AP PRO)
@@ -200,41 +202,38 @@ with tab_kes:
             else:
                 with st.spinner("AI sedang merangka AP dan mencari vektor dari Pinecone..."):
                     try:
-                        # CARIAN VEKTOR MENGGUNAKAN PINECONE & OPENAI
                         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                         db = PineconeVectorStore(index_name="projek-aims", embedding=embeddings)
                         
-                        dokumen_relevan = db.similarity_search(f_fakta, k=5)
+                        # KITA NAIKKAN k=15 SUPAYA LEBIH BANYAK KES DIKAUT
+                        dokumen_relevan = db.similarity_search(f_fakta, k=15)
                         konteks = "\n".join([d.page_content for d in dokumen_relevan])
 
-                        # --- PROMPT BARU YANG LEBIH TEGAS & TERPERINCI ---
-                        prompt_ap = f"""Anda adalah seorang Hakim Mahkamah Syariah yang sangat pakar dan berpengalaman luas di Malaysia. Tugas anda adalah merangka kandungan ALASAN PENGHAKIMAN (AP) yang terperinci, panjang, dan sarat dengan hujah perundangan.
+                        prompt_ap = f"""Anda adalah seorang Hakim Mahkamah Syariah yang pakar. Tugas anda merangka ALASAN PENGHAKIMAN (AP) yang terperinci dan panjang.
 
-AMARAN KERAS FORMAT (WAJIB PATUH 100%):
-1. JANGAN tulis Kepala Surat sama sekali.
-2. Mula draf anda TERUS dengan tajuk: PERMOHONAN
-3. DILARANG menggunakan simbol Markdown (*, >, #, ##).
-4. DILARANG menggunakan kurungan bernombor seperti [1], [2], [3] pada permulaan perenggan.
-5. DILARANG menggunakan HURUF BESAR (ALL CAPS) untuk perenggan huraian. 
-6. JANGAN SESEKALI menyalin maklumat pihak, nama hakim, tarikh, atau no kes daripada Kes Rujukan.
+AMARAN KERAS FORMAT:
+1. JANGAN tulis Kepala Surat sama sekali. Mula draf terus dengan tajuk: PERMOHONAN
+2. DILARANG menggunakan simbol Markdown (*, >, #, ##).
+3. DILARANG menggunakan kurungan bernombor seperti [1], [2] pada mula perenggan.
 
-PENTING: Anda DIWAJIBKAN merujuk kepada RUJUKAN KES LEPAS di bawah untuk mengukuhkan ulasan anda. Di bahagian ULASAN MAHKAMAH, anda WAJIB memasukkan elemen ini dari Konteks:
-- Peruntukan Undang-Undang: Petik nama akta/enakmen dan nombor seksyen yang tepat bagi negeri {m_negeri}.
-- Autoriti Kes Lepas: Rujuk kes-kes terdahulu yang relevan sebagai sokongan teguh.
-- Nas Syarak & Kitab Fiqh: Masukkan pandangan hukum syarak atau petikan yang berkaitan dengan isu kes.
+PENTING UNTUK ULASAN MAHKAMAH: 
+Anda DIWAJIBKAN memasukkan elemen ini dari Konteks:
+- Peruntukan Undang-Undang: Petik nama akta/enakmen dan seksyen yang tepat bagi {m_negeri}.
+- Autoriti Kes Lepas: Anda WAJIB memetik SEKURANG-KURANGNYA 3 HINGGA 4 KES LEPAS YANG BERBEZA daripada rujukan konteks di bawah untuk menyokong hujah. Terangkan kaitan setiap kes tersebut.
+- Nas Syarak: Masukkan petikan hukum syarak berkaitan.
 
 STRUKTUR KANDUNGAN:
 PERMOHONAN
-(Tulis draf permohonan. Ringkasan: {f_permohonan})
+({f_permohonan})
 
 FAKTA KES
-(Huraikan fakta secara jelas. Input: {f_fakta})
+({f_fakta})
 
 ULASAN MAHKAMAH
-(Ini adalah teras penghakiman dan mestilah paling panjang. Huraikan kaitan fakta kes dengan undang-undang, kes autoriti, dan hukum syarak. Ulas menggunakan bahasa kehakiman yang rasmi. Ringkasan asas: {f_ulasan})
+(Ini adalah teras penghakiman. Huraikan kaitan fakta kes dengan undang-undang, 3 HINGGA 4 kes autoriti, dan hukum syarak. Ringkasan asas: {f_ulasan})
 
 KEPUTUSAN
-(Mesti dimulakan dengan ayat: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
+(Mesti dimulakan dengan: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
 (Guna laras bahasa hierarki {m_level}. Ringkasan: {f_keputusan})
 
 RUJUKAN KES LEPAS (KONTEKS DARI PINECONE):
@@ -257,7 +256,7 @@ RUJUKAN KES LEPAS (KONTEKS DARI PINECONE):
                     except Exception as e: st.error(f"Ralat: {e}")
 
 # ==========================================
-# MOD 2: KERTAS KERJA PENGURUSAN & ARAHAN AMALAN
+# MOD 2: KERTAS KERJA PENGURUSAN
 # ==========================================
 with tab_pengurusan:
     st.info("Kertas Kerja Pengurusan & Kertas Konsep Arahan Amalan")
@@ -266,21 +265,15 @@ with tab_pengurusan:
     if jenis_kertas == "Kertas Konsep Arahan Amalan":
         bahagian_unit = st.text_input("1. Bahagian / Unit Penyedia:", value="Bahagian Dasar & Penyelidikan (BPKR)")
         nama_program = st.text_input("2. Tajuk Kertas Konsep:", placeholder="Cth: Penangguhan Kes Atas Alasan Sijil Cuti Sakit")
-        
         col1, col2 = st.columns(2)
-        with col1:
-            latar_belakang = st.text_area("3. Latar Belakang / Ringkasan Isu:", height=150)
-        with col2:
-            asas_pertimbangan = st.text_area("4. Asas Pertimbangan (Hujah Hukum Syarak/Undang-undang):", height=150)
-            
+        with col1: latar_belakang = st.text_area("3. Latar Belakang / Ringkasan Isu:", height=150)
+        with col2: asas_pertimbangan = st.text_area("4. Asas Pertimbangan:", height=150)
         cadangan_syor = st.text_area("5. Cadangan & Syor:", height=100)
-        
     else:
         bahagian_unit = st.text_input("1. Bahagian / Unit Penyedia:")
         nama_program = st.text_input("2. Nama Program / Aktiviti:")
         tarikh_masa = st.text_input("3. Tarikh, Masa & Tempoh:")
         tempat_program = st.text_input("4. Tempat / Lokasi Program:")
-        
         col1, col2 = st.columns(2)
         with col1:
             maklumat_peserta = st.text_area("5. Maklumat & Bilangan Peserta:", height=150)
@@ -295,82 +288,64 @@ with tab_pengurusan:
         else:
             with st.spinner(f"Menyusun format {jenis_kertas} rasmi melalui Pinecone..."):
                 try:
-                    # CARIAN VEKTOR MENGGUNAKAN PINECONE & OPENAI METADATA FILTERING
                     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                     db = PineconeVectorStore(index_name="projek-aims", embedding=embeddings)
-                    
                     filter_kategori = "Arahan Amalan" if jenis_kertas == "Kertas Konsep Arahan Amalan" else "Pengurusan"
-                    
                     dokumen_relevan = db.similarity_search(nama_program, k=5, filter={"sumber": filter_kategori})
                     konteks_teks = "\n".join([f"\n--- CONTOH TEMPLAT {idx+1} ---\n{doc.page_content}\n" for idx, doc in enumerate(dokumen_relevan)])
 
                     if jenis_kertas == "Kertas Konsep Arahan Amalan":
-                        prompt_pengurusan = f"""Anda adalah Penyelidik Kanan Jabatan Kehakiman Syariah Malaysia. Bina draf Kertas Konsep Arahan Amalan yang rasmi.
-
-STRUKTUR WAJIB (JANGAN GUNA JADUAL & DILARANG GUNA SIMBOL BINTANG **):
-JANGAN tulis tajuk utama, terus mula dengan format nombor di bawah:
-
-1. TUJUAN 
-(Jelaskan tujuan kertas konsep ini disediakan untuk pertimbangan YAA Ketua Hakim Syarie)
-
-2. LATAR BELAKANG
-(Huraikan isu/kronologi. Input: {latar_belakang})
-
-3. ASAS-ASAS PERTIMBANGAN
-(Berikan hujah undang-undang/hukum syarak. Input: {asas_pertimbangan})
-
-4. CADANGAN DAN SYOR
-(Input: {cadangan_syor})
-
-5. CONTOH ARAHAN AMALAN
-(Bina SATU draf contoh Arahan Amalan yang lengkap dan kemas bermula dengan 'ARAHAN AMALAN NO. [...] TAHUN [...]')
-
-Rujuk gaya bahasa rasmi dari dokumen ini:
-{konteks_teks}
-"""
+                        prompt_pengurusan = f"Bina draf Kertas Konsep rasmi. Tujuan, Latar Belakang: {latar_belakang}, Asas: {asas_pertimbangan}, Cadangan: {cadangan_syor}. Format dari: {konteks_teks}"
                     else:
-                        prompt_pengurusan = f"""Anda adalah Pegawai Tadbir Kanan di JKSM. Jana draf {jenis_kertas} yang rasmi.
-
-PANDUAN STRUKTUR TEKS:
-- DILARANG menggunakan simbol bintang (**) untuk tulisan Bold.
-- JANGAN tulis tajuk utama. Terus mula dengan nombor 1 di bawah:
-
-1. BAHAGIAN/UNIT 
-{bahagian_unit}
-2. TUJUAN 
-3. LATAR BELAKANG ({objektif_tambahan})
-4. OBJEKTIF PROGRAM 
-5. BUTIR-BUTIR PROGRAM
-(Tarikh: {tarikh_masa}, Tempat: {tempat_program}, Peserta: {maklumat_peserta}, Penceramah: {maklumat_penceramah})
-6. ANGGARAN PERBELANJAAN
-7. KESIMPULAN / PENUTUP
-
-INPUT DATA KEWANGAN:
-{kos_makan_minum}
-
-ARAHAN KRITIKAL PEMBINAAN JADUAL (AMARAN KERAS):
-1. Anda MESTI membina SATU JADUAL SAHAJA di bawah bahagian 6. ANGGARAN PERBELANJAAN.
-2. Jadual tersebut WAJIB mempunyai TEPAT 3 KOLUM: | Bil. | Butiran | Jumlah |
-3. Masukkan SEMUA butiran pengiraan ke dalam kolum "Butiran". Gunakan <br> untuk baris baharu di dalam sel.
-4. Baris terakhir jadual mesti bernama JUMLAH KESELURUHAN.
-
-Rujuk gaya bahasa dokumen ini:
-{konteks_teks}
-"""
+                        prompt_pengurusan = f"Bina {jenis_kertas}. Unit: {bahagian_unit}, Latar: {objektif_tambahan}, Maklumat: {tarikh_masa}, Tempat: {tempat_program}. Kewangan: {kos_makan_minum}. Format dari: {konteks_teks}. WAJIB buat jadual dengan kolum Bil | Butiran | Jumlah."
+                    
                     respons = cuba_jana_ai(prompt_pengurusan)
                     st.divider()
                     st.subheader(f"💡 Hasil Penjanaan AI ({jenis_kertas})")
                     st.write(respons.text)
 
-                    meta_dummy = {'mahkamah':'', 'hakim':'', 'tarikh':'', 'nokes':'', 'pihak1':'', 'pihak2':'', 'jenis_p':'', 'peguam':'', 'negeri':''}
-                    
+                    meta_dummy = {'mahkamah':'','hakim':'','tarikh':'','nokes':'','pihak1':'','pihak2':'','jenis_p':'','peguam':'','negeri':''}
                     is_aa = (jenis_kertas == "Kertas Konsep Arahan Amalan")
                     tajuk_rasmi = f"KERTAS KONSEP ARAHAN AMALAN\n{nama_program.upper()}" if is_aa else f"KERTAS PERMOHONAN KELULUSAN BERBELANJA BAGI\n{nama_program.upper()}\nJABATAN KEHAKIMAN SYARIAH MALAYSIA"
                     
                     fail_pengurusan_docx = bina_fail_word(respons.text, tajuk_rasmi, meta_dummy, is_pengurusan=True, is_arahan_amalan=is_aa)
                     st.download_button(f"📄 Muat Turun {jenis_kertas} (Word)", data=fail_pengurusan_docx, file_name=f"{jenis_kertas.replace(' ', '_')}.docx")
-
                 except Exception as e: st.error(f"❌ Ralat Sistem: {e}")
+
+
+# ==========================================
+# MOD 3: CARIAN PINTAR ONLINE (Copiable Text)
+# ==========================================
+with tab_carian:
+    st.subheader("🌐 Carian Maklumat Pintar (Online)")
+    st.write("Sistem ini akan mencari maklumat perundangan atau maklumat umum terkini di internet (melalui DuckDuckGo) dan AI akan merumuskannya untuk anda.")
+    
+    topik_carian = st.text_input("🔍 Masukkan isu atau topik yang ingin dicari (Cth: Apa itu permohonan cerai fasakh mengikut undang-undang keluarga Islam?):")
+    
+    if st.button("Jalankan Carian", type="primary"):
+        if topik_carian.strip() == "":
+            st.warning("⚠️ Sila masukkan topik carian terlebih dahulu.")
+        else:
+            with st.spinner("Sedang mencari di internet dan merumus maklumat..."):
+                try:
+                    carian_enjin = DuckDuckGoSearchRun()
+                    hasil_mentah = carian_enjin.invoke(topik_carian)
+                    
+                    prompt_carian = f"""Anda adalah Pembantu Penyelidik Syariah. 
+Berikut adalah maklumat mentah yang diperolehi dari internet mengenai topik: '{topik_carian}'.
+Tugas anda adalah menyusun semula maklumat ini menjadi satu penerangan yang sangat kemas, profesional, dan mudah difahami.
+
+Maklumat Mentah:
+{hasil_mentah}
+"""
+                    respons_carian = cuba_jana_ai(prompt_carian)
+                    
+                    st.success("✅ Carian Berjaya! Anda boleh *Copy* teks di bawah:")
+                    # KITA GUNA TEXT AREA SUPAYA USER BOLEH COPY DENGAN MUDAH
+                    st.text_area("Hasil Carian", value=respons_carian.text, height=400)
+                    
+                except Exception as e:
+                    st.error(f"❌ Gagal melakukan carian: {e}")
 
 # ==========================================
 # FOOTER HAK CIPTA (HAK MILIK EKSKLUSIF)
