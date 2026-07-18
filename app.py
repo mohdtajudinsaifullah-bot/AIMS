@@ -232,13 +232,14 @@ FAKTA KES
 (Huraikan fakta kes pemohon secara terperinci, kronologi dan jelas. Input asas: {f_fakta})
 
 ULASAN MAHKAMAH
-(Ini adalah TERAS AP. Tuliskan perbincangan kehakiman yang panjang lebar, ilmiah, dan berhujah. Anda mesti menulis SEKURANG-KURANGNYA 15 HINGGA 20 PERENGGAN dalam bahagian ini. Terapkan Fasa 1, 2, 3, dan 4 di atas. Kupas rujukan kes lepas dan kitab secara menyeluruh. Input asas: {f_ulasan})
+(Ini adalah TERAS AP. Tuliskan perbincangan kehakiman yang panjang lebar, ilmiah, dan berhujah. Anda mesti menulis SEKURANG-KURANGNYA 15 HINGGA 30 PERENGGAN dalam bahagian ini. Terapkan Fasa 1, 2, 3, dan 4 di atas. Kupas rujukan kes lepas dan kitab secara menyeluruh. Input asas: {f_ulasan})
+
+RUJUKAN KES LEPAS (KONTEKS DARI PINECONE - SALIN, PETIK, DAN HURAIKAN DARI SINI):
 
 KEPUTUSAN
 (Mesti dimulakan dengan: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
 (Gunakan laras bahasa kehakiman untuk peringkat {m_level}. Nyatakan perintah mahkamah secara terperinci satu per satu. Input asas: {f_keputusan})
 
-RUJUKAN KES LEPAS (KONTEKS DARI PINECONE - SALIN, PETIK, DAN HURAIKAN DARI SINI):
 ---------------------
 {konteks}
 ---------------------
