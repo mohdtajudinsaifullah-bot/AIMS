@@ -171,7 +171,7 @@ st.divider()
 tab_kes, tab_pengurusan, tab_carian = st.tabs(["🏛️ Mod 1: Analisis Kes Syariah (AP)", "📝 Mod 2: Kertas Kerja", "🌐 Mod 3: Carian Pintar Online"])
 
 # ==========================================
-# MOD 1: ANALISIS KES (DRAF AP PRO)
+# MOD 1: ANALISIS KES (DRAF AP PRO) - VERSI SUPER BIJAK
 # ==========================================
 with tab_kes:
     col_meta, col_input = st.columns([1, 2]) 
@@ -199,51 +199,45 @@ with tab_kes:
             if f_fakta.strip() == "":
                 st.warning("⚠️ Sila masukkan Fakta Kes!")
             else:
-                with st.spinner("AI sedang menganalisa maklumat yang diberikan dan menyediakan cadangan AP..."):
+                with st.spinner("AI sedang menggali pangkalan data kes lepas secara mendalam (Deep Search)..."):
                     try:
                         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
                         db = PineconeVectorStore(index_name="projek-aims", embedding=embeddings)
                         
-                        dokumen_relevan = db.similarity_search(f_fakta, k=15)
-                        konteks = "\n".join([d.page_content for d in dokumen_relevan])
+                        # KITA NAIKKAN k=50 UNTUK TARIK MAKSIMUM CEBISAN KES LEPAS (Mewakili puluhan kes)
+                        dokumen_relevan = db.similarity_search(f_fakta, k=50)
+                        konteks = "\n".join([f"[SUMBER {idx+1}]: {d.page_content}" for idx, d in enumerate(dokumen_relevan)])
 
-                        prompt_ap = f"""Anda adalah YAA Ketua Hakim Mahkamah Syariah yang sangat berpengalaman dan pakar dalam penulisan Alasan Penghakiman (AP). 
-Tugas anda adalah merangka Draf AP yang SANGAT PANJANG, TERPERINCI, MENDALAM dan KOMPREHENSIF (setaraf dengan dokumen kehakiman sebenar yang melebihi 6 hingga 10 muka surat). 
-DILARANG SAMA SEKALI MEMBUAT RINGKASAN! Anda wajib menghuraikan setiap poin dengan panjang lebar.
+                        prompt_ap = f"""Anda adalah YAA Hakim Mahkamah Syariah yang paling berilmu. Tugas anda merangka ALASAN PENGHAKIMAN (AP) yang SANGAT PANJANG (melebihi 8 muka surat), KOMPREHENSIF, dan ILMIAH.
 
-AMARAN KERAS FORMAT:
-1. JANGAN tulis Kepala Surat (nama mahkamah, pihak-pihak, nombor kes). Mula draf terus dengan tajuk: PERMOHONAN.
-2. DILARANG menggunakan simbol Markdown (*, >, #, ##).
-3. DILARANG menggunakan kurungan bernombor seperti [1], [2] pada permulaan perenggan.
+AMARAN KERAS: JANGAN buat ringkasan. Huraikan setiap titik perbincangan seluas-luasnya. DILARANG reka/halusinasi nama kes atau petikan yang tiada dalam rujukan.
 
-PANDUAN PENULISAN ULASAN MAHKAMAH (BAHAGIAN INI WAJIB SANGAT PANJANG):
-Anda DIWAJIBKAN merujuk kepada 'RUJUKAN KES LEPAS' di bawah. Bahagikan Ulasan Mahkamah anda kepada 4 fasa perbincangan utama:
-FASA 1: PERUNTUKAN UNDANG-UNDANG. Senaraikan teks penuh seksyen akta/enakmen bagi {m_negeri} yang relevan. Huraikan maksud seksyen tersebut dan intipatinya baris demi baris.
-FASA 2: NAS SYARAK & KITAB MUKTABAR. Masukkan petikan Al-Quran, Hadis, Arahan Amalan, atau petikan dari kitab-kitab muktabar (jika ada di dalam rujukan). Kupas pandangan fuqaha secara mendalam.
-FASA 3: AUTORITI KES LEPAS. Anda WAJIB memetik SEKURANG-KURANGNYA 3 HINGGA 4 KES LEPAS YANG BERBEZA dari konteks di bawah. JANGAN sekadar sebut nama kes. Anda mesti menghuraikan fakta kes tersebut, rasionandi (alasan keputusan hakim terdahulu), dan prinsip undang-undang yang diputuskan dalam kes tersebut dengan panjang lebar.
-FASA 4: APLIKASI & HUJAH KES SEMASA. Kaitkan segala undang-undang dan kes lepas tadi dengan fakta kes pemohon ini. Hujahkan mengapa permohonan ini patut diterima atau ditolak berdasarkan nas tersebut.
+TUGASAN ULASAN MAHKAMAH (TERAS AP):
+Berdasarkan RUJUKAN KES LEPAS di bawah, anda WAJIB menyelongkar dan mengekstrak elemen berikut untuk dimasukkan ke dalam Ulasan Mahkamah:
+1. HUJAH & ASALAN: Ambil hujah-hujah dan ratio decidendi dari sebanyak mungkin kes-kes lepas yang relevan.
+2. PETIKAN KITAB MUKTABAR: Salin semula dalil Al-Quran, Hadis, atau teks fiqh (jawi/arab) beserta terjemahannya jika wujud dalam rujukan.
+3. PERUNTUKAN UNDANG-UNDANG: Petik dan tafsirkan seksyen Akta/Enakmen secara terperinci.
+Gabungkan dan kaitkan kesemua asalan dari puluhan rujukan ini dengan fakta kes semasa.
 
-STRUKTUR KANDUNGAN WAJIB:
-
+STRUKTUR KANDUNGAN WAJIB (Jangan letak kepala surat):
 PERMOHONAN
-(Kembangkan permohonan ini menggunakan laras bahasa guaman yang penuh formaliti. Input asas: {f_permohonan})
+({f_permohonan})
 
 FAKTA KES
-(Huraikan fakta kes pemohon secara terperinci, kronologi dan jelas. Input asas: {f_fakta})
+({f_fakta})
 
 ULASAN MAHKAMAH
-(Ini adalah TERAS AP. Tuliskan perbincangan kehakiman yang panjang lebar, ilmiah, dan berhujah. Anda mesti menulis SEKURANG-KURANGNYA 15 HINGGA 30 PERENGGAN dalam bahagian ini. Terapkan Fasa 1, 2, 3, dan 4 di atas. Kupas rujukan kes lepas dan kitab secara menyeluruh. Input asas: {f_ulasan})
-
-RUJUKAN KES LEPAS (KONTEKS DARI PINECONE - SALIN, PETIK, DAN HURAIKAN DARI SINI):
+(Tulis sekurang-kurangnya 35 perenggan di sini. Bahagikan perbincangan kepada isu-isu perundangan. Masukkan hujah dari kes-kes terdahulu, petikan kitab, dan ulasan seksyen secara ekstensif. Input asas: {f_ulasan})
 
 KEPUTUSAN
-(Mesti dimulakan dengan: "SETELAH Kami membaca dan meneliti permohonan..." ATAU "SETELAH Mahkamah meneliti...")
-(Gunakan laras bahasa kehakiman untuk peringkat {m_level}. Nyatakan perintah mahkamah secara terperinci satu per satu. Input asas: {f_keputusan})
+(Mesti dimulakan dengan: "SETELAH mahkamah mendengar keterangan Plaintif, saksi Palintif dan Defendan serta dokumen dokumen yang dilampirkan, dan setelah Mahkamah meneliti hujah kedua dua pihak, meneliti Notis Rayuan, Notis Rayuan Balas, Alasan Rayuan, Rekod Rayuan dan Hujahan Pihak-Pihak, maka dengan ini Mahkamah memerintahkan seperti berikut: ....". Huraikan perintah mahkamah satu persatu. Laras: {m_level}. Input asas: {f_keputusan})
 
+RUJUKAN KES LEPAS (PANGKALAN DATA PINECONE):
 ---------------------
 {konteks}
 ---------------------
 """
+                        # Kita guna gpt-4o untuk kepintaran maksimum (jika bajet membenarkan), atau gpt-4o-mini
                         respons = cuba_jana_ai(prompt_ap)
                         
                         meta_dict = {
@@ -254,7 +248,7 @@ KEPUTUSAN
                         
                         fail_word = bina_fail_word(respons.text, "ALASAN PENGHAKIMAN", meta_dict)
                         
-                        st.success("✅ Draf selesai dijana! Sila muat turun fail Word di bawah.")
+                        st.success("✅ Draf AP Pintar selesai dijana! Sila muat turun fail Word di bawah.")
                         st.download_button("📄 Muat Turun AP (Word)", data=fail_word, file_name=f"AP_{m_nokes}.docx")
                     except Exception as e: st.error(f"Ralat: {e}")
 
@@ -316,78 +310,73 @@ with tab_pengurusan:
                 except Exception as e: st.error(f"❌ Ralat Sistem: {e}")
 
 # ==========================================
-# MOD 3: CARIAN PINTAR ONLINE (DENGAN BUTANG CARIAN LANJUT)
+# MOD 3: CARIAN PINTAR ONLINE (ANTI-HALUSINASI LINK)
 # ==========================================
 with tab_carian:
     st.subheader("🌐 Carian Maklumat Pintar (Online)")
-    st.write("Sistem ini akan mencari maklumat perundangan atau maklumat umum terkini di internet (melalui DuckDuckGo) dan AI akan merumuskannya untuk anda.")
+    st.write("Sistem ini akan mencari maklumat internet melalui Ejen Carian (DuckDuckGo). Link yang diberikan adalah pautan sebenar dari hasil carian.")
     
-    # 1. SETUP SESSION STATE
     if "hasil_asas" not in st.session_state:
         st.session_state.hasil_asas = ""
     if "carian_query" not in st.session_state:
         st.session_state.carian_query = ""
 
-    topik_carian = st.text_input("🔍 Masukkan isu atau topik yang ingin dicari (Cth: Apa itu permohonan cerai fasakh mengikut undang-undang keluarga Islam?):")
+    topik_carian = st.text_input("🔍 Masukkan isu atau topik yang ingin dicari (Cth: Maksud nusyuz enakmen keluarga islam):")
     
-    # 2. BUTANG PERTAMA (Carian Asas)
     if st.button("Jalankan Carian", type="primary"):
         if topik_carian.strip() == "":
             st.warning("⚠️ Sila masukkan topik carian terlebih dahulu.")
         else:
-            with st.spinner("Sedang mencari di internet dan merumus maklumat..."):
+            with st.spinner("Ejen AI sedang melayari internet dan menyaring maklumat..."):
                 try:
+                    # Setup tools
                     carian_enjin = DuckDuckGoSearchRun()
-                    hasil_mentah = carian_enjin.invoke(topik_carian)
+                    
+                    # Dapatkan maklumat terus dari internet
+                    hasil_mentah = carian_enjin.invoke(f"{topik_carian} malaysia")
                     
                     prompt_carian = f"""Anda adalah Pembantu Penyelidik Syariah. 
-                    Berikut adalah maklumat mentah yang diperolehi dari internet mengenai topik: '{topik_carian}'.
-                    Tugas anda adalah menyusun semula maklumat ini menjadi satu penerangan yang sangat kemas, profesional, dan mudah difahami.
-                    
-                    Maklumat Mentah:
-                    {hasil_mentah}
+                    Berdasarkan teks carian internet ini: '{hasil_mentah}'.
+                    Sila rumuskan maklumat secara profesional mengenai: '{topik_carian}'.
+                    HANYA gunakan maklumat dari teks di atas.
                     """
                     respons_carian = cuba_jana_ai(prompt_carian)
                     
-                    # Simpan dalam session state supaya tak hilang
                     st.session_state.hasil_asas = respons_carian.text
                     st.session_state.carian_query = topik_carian
                     
                 except Exception as e:
                     st.error(f"❌ Gagal melakukan carian: {e}")
 
-    # 3. PAPARAN HASIL PERTAMA & BUTANG KEDUA
     if st.session_state.hasil_asas:
-        st.success("✅ Carian Berjaya! Anda boleh rujuk ringkasan asas di bawah:")
+        st.success("✅ Carian Berjaya! Rujuk ringkasan di bawah:")
         st.text_area("Hasil Carian", value=st.session_state.hasil_asas, height=350)
         
         st.divider()
         
-        # Butang Carian Lanjut
-        if st.button("🔍 Carian Lanjut (Akta, Kes & Link)"):
-            with st.spinner("Sedang menggali peruntukan undang-undang dan kes rujukan beserta pautan..."):
+        if st.button("🔍 Carian Lanjut (Akta, Kes & Link Sebenar)"):
+            with st.spinner("Mencari peruntukan, kes dan pautan internet yang sebenar..."):
                 try:
                     carian_enjin = DuckDuckGoSearchRun()
-                    query_lanjut = f"{st.session_state.carian_query} akta enakmen kes mahkamah syariah e-syariah malaysia pautan link"
+                    # Minta enjin carian cari link secara spesifik
+                    query_lanjut = f"{st.session_state.carian_query} kes mahkamah syariah akta link"
                     hasil_mentah_lanjut = carian_enjin.invoke(query_lanjut)
                     
                     prompt_lanjut = f"""
-                    Anda adalah Penyelidik Undang-Undang Syariah Kanan. Berdasarkan isu: '{st.session_state.carian_query}' 
-                    dan hasil carian web ini: '{hasil_mentah_lanjut}'.
+                    Anda adalah Penyelidik Undang-Undang Kanan. 
+                    Ini adalah hasil carian web sebenar (termasuk pautan): '{hasil_mentah_lanjut}'.
                     
-                    Sila sediakan maklumat terperinci berikut:
-                    1. **Peruntukan Undang-Undang**: Senaraikan Akta/Enakmen Syariah yang berkaitan di Malaysia.
-                    2. **Kes Rujukan**: Senarai kes-kes Mahkamah Syariah yang telah diputuskan berhubung isu ini.
-                    3. **Pautan (URL)**: Anda WAJIB menyertakan pautan (URL link) internet yang sah yang dijumpai dalam carian web tersebut supaya pengguna boleh klik untuk bacaan lanjut.
+                    TUGAS:
+                    1. Senaraikan Peruntukan Undang-Undang dan Kes Rujukan jika ada disebut dalam carian di atas.
+                    2. AMARAN: Anda HANYA DIBENARKAN meletakkan Pautan (URL) yang wujud secara fizikal di dalam teks carian web di atas. 
+                    3. JANGAN reka (hallucinate) apa-apa URL seperti 'www.jakim.gov.my/faq...'. Jika tiada URL penuh dijumpai dalam teks carian, tulis "Tiada pautan spesifik ditemui, sila rujuk portal rasmi e-Syariah".
                     
-                    Susun jawapan dengan kemas menggunakan format Markdown (Contoh format: `[Nama Kes/Akta](URL)`). 
-                    Jika tiada pautan khusus dijumpai dalam hasil carian, berikan cadangan portal rasmi (seperti portal e-Syariah atau Jurnal Hukum).
+                    Format: Markdown.
                     """
                     
                     respons_lanjut = cuba_jana_ai(prompt_lanjut)
                     
-                    st.markdown("### 📚 Hasil Carian Lanjut (Perundangan, Kes & Pautan)")
-                    st.info("Nota: Pautan (URL) yang dijana bergantung kepada ketersediaan rekod di enjin carian awam internet.")
+                    st.markdown("### 📚 Hasil Carian Lanjut")
                     st.markdown(respons_lanjut.text)
                     
                 except Exception as e:
