@@ -358,20 +358,26 @@ with tab_carian:
             with st.spinner("Mencari peruntukan, kes dan pautan internet yang sebenar..."):
                 try:
                     carian_enjin = DuckDuckGoSearchRun()
-                    # Minta enjin carian cari link secara spesifik
                     query_lanjut = f"{st.session_state.carian_query} kes mahkamah syariah akta link"
                     hasil_mentah_lanjut = carian_enjin.invoke(query_lanjut)
                     
+                    # PROMPT BARU: Benarkan AI guna ilmunya untuk akta & kes, tapi tegas bab link!
                     prompt_lanjut = f"""
-                    Anda adalah Penyelidik Undang-Undang Kanan. 
-                    Ini adalah hasil carian web sebenar (termasuk pautan): '{hasil_mentah_lanjut}'.
+                    Anda adalah Penyelidik Undang-Undang Syariah Kanan yang sangat pakar.
+                    Topik carian: '{st.session_state.carian_query}'
+                    Hasil carian web (sebagai rujukan pautan terkini): '{hasil_mentah_lanjut}'
                     
-                    TUGAS:
-                    1. Senaraikan Peruntukan Undang-Undang dan Kes Rujukan jika ada disebut dalam carian di atas.
-                    2. AMARAN: Anda HANYA DIBENARKAN meletakkan Pautan (URL) yang wujud secara fizikal di dalam teks carian web di atas. 
-                    3. JANGAN reka (hallucinate) apa-apa URL seperti 'www.jakim.gov.my/faq...'. Jika tiada URL penuh dijumpai dalam teks carian, tulis "Tiada pautan spesifik ditemui, sila rujuk portal rasmi e-Syariah".
+                    TUGAS ANDA:
+                    Sila berikan maklumat yang PANJANG LEBAR dan TERPERINCI berdasarkan pengetahuan perundangan syariah anda. Jangan kedekut maklumat!
                     
-                    Format: Markdown.
+                    1. PERUNTUKAN UNDANG-UNDANG: Senaraikan seksyen akta/enakmen berkaitan topik ini secara terperinci. Huraikan maksud peruntukan tersebut baris demi baris.
+                    2. KES RUJUKAN MAHKAMAH: Senaraikan sekurang-kurangnya 3 HINGGA 5 KES MAHKAMAH SYARIAH (landmark cases) yang sebenar. Huraikan fakta kes dan keputusan hakim untuk setiap kes tersebut dengan panjang lebar.
+                    3. PAUTAN / SUMBER RUJUKAN:
+                       - AMARAN: Untuk pautan URL, rujuk 'Hasil carian web' di atas. Jika ada URL yang wujud, senaraikan.
+                       - Jika tiada URL spesifik ditemui dalam teks carian web, berikan pautan portal rasmi sahaja (seperti www.esyariah.gov.my atau www.jakim.gov.my). 
+                       - DILARANG SAMA SEKALI mereka-reka (hallucinate) URL palsu.
+                    
+                    Format: Gunakan Markdown (Bold, Bullet points, Nombor) supaya kemas dan mudah dibaca.
                     """
                     
                     respons_lanjut = cuba_jana_ai(prompt_lanjut)
